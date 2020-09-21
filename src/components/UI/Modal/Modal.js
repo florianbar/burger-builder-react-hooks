@@ -1,33 +1,32 @@
-import React, { Component } from 'react';
+import React, { useEffect } from 'react';
 
 import classes from './Modal.module.css';
 import Backdrop from '../Backdrop/Backdrop';
 
-class Modal extends Component {
-    shouldComponentUpdate(nextProps, nextState) {
-        //Only allow componentUpdate if Modal visibility changes
-        return nextProps.show !== this.props.show || nextProps.children !== this.props.children;
-    }
+const Modal = props => {
+    // shouldComponentUpdate(nextProps, nextState) {
+    //     //Only allow componentUpdate if Modal visibility changes
+    //     return nextProps.show !== props.show || nextProps.children !== props.children;
+    // }
 
-    componentWillUpdate() {
-        console.log("[Modal] WillUpdate");
-    }
-
-    render() {
-        return (
-            <React.Fragment>
-                <Backdrop show={this.props.show} clicked={this.props.modalClosed} />
-                <div 
-                    className={classes.Modal}
-                    style={{
-                        transform: this.props.show ? "translateY(0)" : "translateY(-100vh)",
-                        opacity: this.props.show ? 1 : 0
-                    }}>
-                    {this.props.children}
-                </div>
-            </React.Fragment>
-        );
-    }
+    return (
+        <React.Fragment>
+            <Backdrop show={props.show} clicked={props.modalClosed} />
+            <div 
+                className={classes.Modal}
+                style={{
+                    transform: props.show ? "translateY(0)" : "translateY(-100vh)",
+                    opacity: props.show ? 1 : 0
+                }}>
+                {props.children}
+            </div>
+        </React.Fragment>
+    );
 };
 
-export default Modal;
+export default React.memo(Modal, (prevProps, nextProps) => {
+    return (
+        nextProps.show === prevProps.show && 
+        nextProps.children === prevProps.children
+    );
+});
