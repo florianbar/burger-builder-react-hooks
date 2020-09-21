@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Redirect } from 'react-router-dom';
 import { connect } from 'react-redux';
 
@@ -8,48 +8,47 @@ import Spinner from '../../components/UI/Spinner/Spinner';
 import classes from './Auth.module.css';
 import * as actions from '../../store/actions/actionCreators/index';
 
-const initalEmailInput = {
-    elementType: "input",
-    elementConfig: {
-        type: "email",
-        placeholder: "Email Address"
-    },
-    value: "",
-    validation: {
-        required: true,
-        isEmail: true
-    },
-    valid: false,
-    touched: false
-};
-const initalPasswordInput = {
-    elementType: "input",
-    elementConfig: {
-        type: "password",
-        placeholder: "Password"
-    },
-    value: "",
-    validation: {
-        required: true,
-        minLength: 6
-    },
-    valid: false,
-    touched: false
-};
-
 const Auth = props => {
-    const [emailInput, setEmailInput] = useState(initalEmailInput);
-    const [passwordInput, setPasswordInput] = useState(initalPasswordInput);
-    const [isSignUp, setIsSignUp] = useState(true);
-
-    const {buildingBurger, authRedirectPath, onSetAuthRedirectPath, onAuth} = props;
-    useEffect(() => {
-        if (!buildingBurger && authRedirectPath !== "/") {
-            onSetAuthRedirectPath();
+    const initialForm = {
+        email: {
+            elementType: "input",
+            elementConfig: {
+                type: "email",
+                placeholder: "Email Address"
+            },
+            value: "",
+            validation: {
+                required: true,
+                isEmail: true
+            },
+            valid: false,
+            touched: false
+        },
+        password: {
+            elementType: "input",
+            elementConfig: {
+                type: "password",
+                placeholder: "Password"
+            },
+            value: "",
+            validation: {
+                required: true,
+                minLength: 6
+            },
+            valid: false,
+            touched: false
         }
-    }, [buildingBurger, authRedirectPath, onSetAuthRedirectPath]);
+    };
+    const [form, setForm] = useState(initialForm);
+    const [isSignUp, setIsSignUp] = useState(false);
 
-    const checkValidity = useCallback((value, rules) => {
+    useEffect(() => {
+        if (!props.buildingBurger && props.authRedirectPath !== "/") {
+            props.onSetAuthRedirectPath();
+        }
+    }, []);
+
+    const checkValidity = (value, rules) => {
         let isValid = true;
 
         if (rules.required) {
@@ -65,47 +64,36 @@ const Auth = props => {
         }
 
         return isValid;
-    }, []);
-
-    const inputChangedHandler = (value, controlName) => {
-        if (controlName === "email") {
-            setEmailInput(prevState => {
-                return {
-                    ...prevState,
-                    value: value,
-                    valid: checkValidity(value, emailInput.validation),
-                    touched: true
-                };
-            });
-        } 
-        else if (controlName === "password") {
-            setPasswordInput(prevState => {
-                return {
-                    ...prevState,
-                    value: value,
-                    valid: checkValidity(value, passwordInput.validation),
-                    touched: true
-                };
-            });
-        }
     };
 
-    const submitHandler = useCallback((event) => {
+    const inputChangedHandler = (event, controlName) => {
+        setForm({
+            ...form,
+            [controlName]: {
+                ...form[controlName],
+                value: event.target.value,
+                valid: checkValidity(event.target.value, form[controlName].validation),
+                touched: true
+            }
+        });
+    };
+
+    const submitHandler = (event) => {
         event.preventDefault();
-        onAuth(
-            emailInput.value, 
-            passwordInput.value,
+        props.onAuth(
+            form.email.value, 
+            form.password.value,
             isSignUp
         );
-    }, [onAuth, emailInput, passwordInput, isSignUp]);
+    };
 
-    const switchAuthModeHandler = useCallback(() => {
-        setIsSignUp(prevState => !prevState);
-    }, [setIsSignUp]);
+    const switchAuthModeHandler = () => {
+        setIsSignUp(!isSignUp);
+    };
 
     const formElementsArray = [];
-    formElementsArray.push({ id: "email", config: emailInput });
-    formElementsArray.push({ id: "password", config: passwordInput });
+    formElementsArray.push({ id: "email", config: form.email });
+    formElementsArray.push({ id: "password", config: form.password });
     let formInputs = formElementsArray.map(formElement => (
         <Input
             key={formElement.id}
@@ -115,7 +103,7 @@ const Auth = props => {
             invalid={!formElement.config.valid}
             shouldValidate={formElement.config.validation}
             touched={formElement.config.touched}
-            changed={(event) => inputChangedHandler(event.target.value, formElement.id)} />
+            changed={(event) => inputChangedHandler(event, formElement.id)} />
     ));
 
     if (props.loading) {
@@ -124,7 +112,7 @@ const Auth = props => {
 
     let errorMessage = props.error ? (<p>{props.error.message}</p>) : null;
 
-    const authRedirect = props.isAuthenticated ? <Redirect to={authRedirectPath} /> : null;
+    const authRedirect = props.isAuthenticated ? <Redirect to={props.authRedirectPath} /> : null;
 
     return (
         <div className={classes.Auth}>
@@ -134,13 +122,13 @@ const Auth = props => {
             <form onSubmit={submitHandler}>
                 {formInputs}
                 <Button btnType="Success">
-                    {isSignUp ? "SIGN UP" : "SIGN IN"}
+                    {isSignUp ? "SIGN UP" : "LOGIN"}
                 </Button>
             </form>
             <Button 
                 btnType="Danger" 
                 clicked={switchAuthModeHandler}>
-                SWITCH TO {isSignUp ? "SIGN IN" : "SIGN UP"}
+                SWITCH TO {isSignUp ? "LOGIN" : "SIGN UP"}
             </Button>
         </div>
     );
